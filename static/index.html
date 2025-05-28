@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Heart Disease Predictor</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #dee4ec, #f6f8fa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 650px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    label {
+      font-weight: 500;
+      display: block;
+      margin: 15px 0 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #result {
+      margin-top: 25px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      display: none;
+    }
+
+    .low-risk {
+      color: #28a745;
+    }
+
+    .high-risk {
+      color: #dc3545;
+    }
+
+    .loader {
+      display: none;
+      margin: 20px auto 10px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #007bff;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Heart Disease Risk Predictor</h1>
+    <form id="predictionForm">
+      <label>Age:</label><input type="number" name="age" required>
+      <label>Sex (1=Male, 0=Female):</label><input type="number" name="sex" required>
+      <label>Chest Pain Type (0-3):</label><input type="number" name="cp" required>
+      <label>Resting Blood Pressure:</label><input type="number" name="trestbps" required>
+      <label>Cholesterol:</label><input type="number" name="chol" required>
+      <label>Fasting Blood Sugar (>120 = 1):</label><input type="number" name="fbs" required>
+      <label>Resting ECG (0-2):</label><input type="number" name="restecg" required>
+      <label>Max Heart Rate:</label><input type="number" name="thalach" required>
+      <label>Exercise Induced Angina (1=yes, 0=no):</label><input type="number" name="exang" required>
+      <label>Oldpeak:</label><input type="number" step="0.1" name="oldpeak" required>
+      <label>Slope (0-2):</label><input type="number" name="slope" required>
+      <label>CA (0-4):</label><input type="number" name="ca" required>
+      <label>Thal (0=normal, 1=fixed, 2=reversible):</label><input type="number" name="thal" required>
+      <button type="submit">Predict</button>
+    </form>
+
+    <div class="loader" id="loader"></div>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('predictionForm');
+    const resultDiv = document.getElementById('result');
+    const loader = document.getElementById('loader');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultDiv.style.display = 'none';
+      loader.style.display = 'block';
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      Object.keys(data).forEach(key => data[key] = Number(data[key]));
+
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        loader.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.className = result.prediction === 1 ? 'high-risk' : 'low-risk';
+        resultDiv.textContent = result.result || 'Something went wrong';
+      } catch (error) {
+        loader.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'high-risk';
+        resultDiv.textContent = 'Error processing prediction. Try again.';
+      }
+    });
+  </script>
+</body>
+</html>
