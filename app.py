@@ -1,47 +1,46 @@
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-import joblib
-import numpy as np
+from flask import Flask, request, render_template
+from src.Heart.pipeline.Prediction_pipeline import CustomData, PredictPipeline
 
-app = FastAPI()
+app = Flask(__name__)
 
-# Serve static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Define the home route
+@app.route("/", methods=["GET", "POST"])
+def home():
+    if request.method == "POST":
+        try:
+            # Validate and convert form data to CustomData object
+            data = CustomData(
+                age=request.form.get("age"),
+                sex=request.form.get("sex"),
+                cp=(request.form.get("cp")),
+                trestbps=(request.form.get("trestbps")),
+                chol=(request.form.get("chol")),
+                fbs=request.form.get("fbs"),
+                restecg=request.form.get("restecg"),
+                thalach=(request.form.get("thalach")),
+                exang=request.form.get("exang"),
+                oldpeak=request.form.get("oldpeak"),
+                slope=request.form.get("slope"),
+                ca=request.form.get("ca"),
+                thal=(request.form.get("thal"))
+            )
 
-# Serve custom UI at root "/"
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return FileResponse("static/index.html")
+            final_data = data.get_data_as_dataframe()
+            # Make prediction
+            predict_pipeline = PredictPipeline()
+            pred = predict_pipeline.predict(final_data)
+            result = round(pred[0], 2)
+            return render_template("result.html", final_result=result)
 
-# Prediction input model
-class HeartInput(BaseModel):
-    age: int
-    sex: int
-    cp: int
-    trestbps: int
-    chol: int
-    fbs: int
-    restecg: int
-    thalach: int
-    exang: int
-    oldpeak: float
-    slope: int
-    ca: int
-    thal: int
+        except Exception as e:
+            # Handle exceptions gracefully
+            error_message = f"Error during prediction: {str(e)}"
+            return render_template("error.html", error_message=error_message)
 
-# Load model
-model = joblib.load("model/model.joblib")
+    else:
+        # Render the initial page
+        return render_template("index.html")
 
-# Prediction endpoint
-@app.post("/predict")
-async def predict(data: HeartInput):
-    features = np.array([[
-        data.age, data.sex, data.cp, data.trestbps, data.chol,
-        data.fbs, data.restecg, data.thalach, data.exang,
-        data.oldpeak, data.slope, data.ca, data.thal
-    ]])
-    prediction = model.predict(features)[0]
-    result = "High risk of heart disease" if prediction == 1 else "Low risk"
-    return {"prediction": int(prediction), "result": result}
+# Execution begins
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=8080, debug=True)
