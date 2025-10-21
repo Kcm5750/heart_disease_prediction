@@ -1,7 +1,13 @@
-fastapi
-uvicorn[standard]
+pandas
 numpy
 scikit-learn
-joblib
-pandas
+seaborn
+ipykernel
+matplotlib
+flask 
+dvc
+catboost
 xgboost
+mlflow==2.2.2
+
+-e .
