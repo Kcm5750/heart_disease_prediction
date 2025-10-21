@@ -1,17 +1,14 @@
-# Use an official Python runtime as a parent image
-FROM python:3.12-slim
+# FROM  - the base image to use to start the build process.
+FROM python:3.8-slim-buster
 
-# Set working directory in container
+# WORKDIR - sets the working directory for any RUN, CMD, ENTRYPOINT, COPY and ADD instructions that follow it in the Dockerfile.
 WORKDIR /app
 
-# Copy requirements file and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+#COPY - copies files or directories and adds them to the filesystem of the container.
+COPY . ./
 
-COPY . .
+# RUN - executes any commands in a new layer on top of the current image and commits the results.
+RUN pip install -r requirements.txt
 
-# Expose port 8000 to the outside of the container
-EXPOSE 8000
-
-# Run the application with uvicorn
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD - provides defaults for an executing container.
+CMD python app.py
